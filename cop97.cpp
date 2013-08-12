@@ -85,7 +85,7 @@ void RunCOP() {
 
   initMatrix_v(-1);
   cout << "\n**cop97 started \n ... Matrix v initialised\n";
-  cout << "\n**Computing DP stages \n";
+  cout << "\n**Computing DP stages";
 
   int j = 1;
   bool goOn = 1;
