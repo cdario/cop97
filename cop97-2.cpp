@@ -13,7 +13,7 @@
   #include <iostream>
   #include <iomanip>
   #include <fstream>
-
+  
   using namespace std;
 
   enum PIEnum {
@@ -29,12 +29,18 @@
   vector<int> phases(phaseSeq, phaseSeq + sizeof (phaseSeq) /
   		   sizeof (phaseSeq[0])); // A = 0, B = 1, C = 2
 
-  int initialPhase; // = 2;
-  int idxCurrentPh; //= initialPhase; // set initial phase to C (2)
+  //NEW
+  int coordinatedPhase ; //A
+  int offset;
+
+  int timesteps = 0;
+
+  int bandwidth = 3; // arbitrary
+
+  int initialPhase; // set to coordinated phase
+  int idxCurrentPh; // set initial phase to C (2)
   int permanentQueueLengths[T] = {};
-  int arrivalData[10][3];
-/*
-   = {
+/*  int arrivalData[10][3] = {
     { 0, 0, 1},
     { 0, 0, 1},
     { 0, 0, 0},
@@ -47,6 +53,10 @@
     { 0, 0, 0}
   };
 */
+
+int arrivalData[10][3];  
+
+
   std::vector< std::vector<int> > v; //v_j(s_j);
   std::vector< std::vector<int> > x_star; // optimal solutions x*_j(s_j)
   vector<vector<vector<int> > > Q; // permanent queue lengths Q_{phi, j}(s_j)
@@ -61,23 +71,34 @@
   int getT(int d, int phi); //simplified
   int getSaturationFlow(int phi); //not implemented
 
-  bool verbose;
-
   void initMatrix_v(int init);
   //void updateIndexPhase2Stage();
   void printVector(vector<int> values);
   void printMatrix(vector<vector<int> > values);
   void printArray(int arry[], int sz);
 
+  void loadFromFile();
+
   void RunCOP();
-  void loadFromFile(char* filename);
 
   int main(int argc, char** argv) {
 
-    loadFromFile(argv[1]);
-    initialPhase  = *argv[2]- 48;
-    idxCurrentPh = initialPhase;
-    if ((*argv[3] - 48) == 1) verbose = true; else verbose = false;
+  loadFromFile();
+  initialPhase = coordinatedPhase; //NEW for simplicity, COP starts at the end of the coordinated phase
+  idxCurrentPh = initialPhase;
+  cout << "coordinated = " << coordinatedPhase<< endl;
+//cout << "coordinated phase = " << coordinatedPhase<< endl;
+//cout << "offset = " << offset<< endl;
+
+/*
+for (int y = 0; y < 3; y++) {
+    for (int x = 0; x < 10; x++) {
+      cout << arrivalData[x][y];
+    }
+    cout << endl;
+}
+*/
+
 
     RunCOP();
     return 0;
@@ -86,6 +107,7 @@
   void RunCOP() {
 
     std::vector<int> X[T] = {};
+
 
     v.resize(M);
     x_star.resize(M);
@@ -96,32 +118,27 @@
     }
 
     initMatrix_v(-1);
-    if (verbose)
-    {
-      cout << "\n**cop97 started \n ... Matrix v initialised\n";
-      cout << "\n**Computing DP stages";
-    }
+    cout << "\n**cop97 started \n ... Matrix v initialised\n";
+    cout << "\n**Computing DP stages";
 
     int j = 1;
     bool goOn = 1;
 
     do {
-
- 
+cout << "mark1";
       // <editor-fold defaultstate="collapsed" desc="header stage">
-      if (verbose){
       cout << endl << "\n\n\t\t\tStage " << j << " Calculations [" << phaseSeq[idxCurrentPh] << "]" << endl;
       cout << "--------------------------------------------------------------------" << endl;
       cout << "s" << j << "\tx*(s" << j << ")\tv(s" << j << ")\tQA\tQB\tQC\tXj(s" << j << ")\n";
       cout << "--------------------------------------------------------------------\n";
-      }
       // </editor-fold>
-
+cout << "mark2";
       for (int sj = red; sj <= T; sj++) {
-        if (verbose)
-        cout << " " << sj;
 
+
+        cout << " " << sj;
         X[j] = getFeasibleGreens(sj, j);
+        
         int xSz = X[j].size();
 
         // <editor-fold defaultstate="collapsed" desc="header value function calculations">
@@ -144,6 +161,7 @@
         	}
         }
 
+
         //dimensions Q : [ sj ] [ phi ] [ j ]
         Q.resize(T);
         for (int i = 0; i < T; ++i) {
@@ -159,6 +177,8 @@
         int optimal_x = -1;
         int optimal_index_x = -1;
         //int earliestArrival = 0;  // not used due to simplification
+
+
 
         for (vector<int>::iterator it = X[j].begin(); it != X[j].end(); ++it) {
   	int xj = *it;
@@ -324,13 +344,11 @@
   	Q[sj - red][pp][j - 1] = L[sj - red][optIndeX][pp]; // -1 :index
 
         //<editor-fold defaultstate="collapsed" desc="body stage">
-      if (verbose)
-      {
         cout << "\t" << optimal_x;
         cout << "\t" << v[j][sj - red];
 
         for (int pp = 0; pp < phases.size(); pp++)
-  	     cout << "\t" << Q[sj - red][pp][j - 1];
+  	cout << "\t" << Q[sj - red][pp][j - 1];
 
         cout << setfill(' ') << setw(30 - 2 * L.size());
         printVector(X[j]);
@@ -338,9 +356,7 @@
         // </editor-fold>
 
         if (sj % 2 == 0)
-  	     cout << endl;
-      }
-
+  	cout << endl;
       } //end sj cycle
 
 
@@ -368,14 +384,12 @@
 
     } while (goOn);
 
-    if (verbose)
-    {
-      cout << "\n**Stopping Criterion satisfied\n **Printing states and optimal control tables";
-      cout << "\n\nTable states( v )\n\n";
-      printMatrix(v);
-      cout << "\nTable optimal control associated (x^star)\n\n";
-      printMatrix(x_star);
-    }
+    cout << "\n**Stopping Criterion satisfied\n **Printing states and optimal control tables";
+    cout << "\n\nTable states( v )\n\n";
+    printMatrix(v);
+    cout << "\nTable optimal control associated (x^star)\n\n";
+    printMatrix(x_star);
+
 
 
     /*  Retrieval of Optimal Policy     */
@@ -383,28 +397,27 @@
     int jsize = j - (phases.size() - 1);
     //std::vector<int> s;
     int s_star= T;
-    if (verbose){
-      cout <<  "\n**Recovering optimal solution";
-      cout <<  "\n\nMin control delay sequence ";
-    }
+    cout <<  "\n**Recovering optimal solution";
+    cout <<  "\n\nMin control delay sequence ";
+
 
     int idxSeq = initialPhase;
-    cout << "[ ";
+
     for(int jj= jsize; jj>=1; jj--)
-    {
+      {
         int xx = x_star[jj][s_star-red];
         cout << phaseSeq[idxSeq] << ":" <<xx <<" ";
 
-      if (jj > 1) {
-  	    int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
-  	     s_star = s_star - hj_star;
-  	  }
+        if (jj > 1)
+  	{
+  	  int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
+  	  s_star = s_star - hj_star;
+  	}
 
-      idxSeq = idxSeq==2 ? 0:idxSeq + 1;
+        idxSeq = idxSeq==2 ? 0:idxSeq + 1;
 
-    }
-      cout << "]";
-    if (verbose)
+      }
+
     cout  << "\n **cop97 ended \n";
 
   };
@@ -427,15 +440,25 @@
     if (j == 1) //simplification removes the min green restriction for stage 1
       set.push_back(sj - red);
     else {
-      set.push_back(0);
-      int c = mingreen;
 
-      if (!(sj - red < mingreen)) {
-        do {
-  	set.push_back(c);
-  	c++;
-        } while (c < (sj - red));
-      }
+    if( idxCurrentPh == coordinatedPhase) //NEW no phase skipping, only option is bandwidth
+    {
+      set.push_back(bandwidth);
+    }
+    else
+    {  
+        set.push_back(0);
+        int c = mingreen;
+
+        if (!(sj - red < mingreen)) {
+          do {
+    	set.push_back(c);
+    	c++;
+          } while (c < (sj - red));
+        }
+    }
+
+
     }
 
     return set;
@@ -597,6 +620,9 @@
     cout << "]";
   }
 
+
+
+
   void printVector(vector<int> values) {
 
     cout << "[ ";
@@ -614,20 +640,40 @@
     }
   }
 
-void loadFromFile(char* filename) {
-        int x, y;
-        ifstream in(filename);
+  //NEW 
 
-        if (!in) {
-          cout << "Cannot open file.\n";
-          return;
-        }
+  void loadFromFile() {
+  int x, y;
+  ifstream in("data1.txt");
 
-        for (y = 0; y < 10; y++) {
-          for (x = 0; x < 3; x++) {
+  if (!in) {
+    cout << "Cannot open file.\n";
+    return;
+  }
 
-               in >> arrivalData[y-1][x];
-          }
-        }
-        in.close();
-      }
+  int phaseCheck;
+
+  for (y = 0; y <= 10; y++) {
+    for (x = 0; x < 3; x++) {
+
+//      in >> phaseCheck;
+
+//      cout << phaseCheck << ", ";
+
+       if (y == 0)
+       {
+         in >>  phaseCheck;
+         if (phaseCheck > 0){ //allow for one coordinated phase
+         coordinatedPhase = x;
+          offset  = phaseCheck;
+         } 
+       }else
+       {
+         in >> arrivalData[y-1][x];
+       }
+    }
+  }
+
+  in.close();
+}
+
