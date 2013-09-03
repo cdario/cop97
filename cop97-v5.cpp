@@ -73,7 +73,7 @@ void RunCOP() {
   }
 
   initMatrices(-1);
-  int j = 1;
+  unsigned int j = 1;
   bool criterion_flag = 1;
 
   do {
@@ -106,10 +106,10 @@ void RunCOP() {
      }
 
      Q.resize(T);
-     for (int i = 0; i < T; ++i) {
+     for (unsigned int i = 0; i < T; ++i) {
       Q[i].resize(phases.size());
 
-      for (int j = 0; j < phases.size(); ++j)
+      for (unsigned int j = 0; j < phases.size(); ++j)
         Q[i][j].resize(M);
     }
 
@@ -142,7 +142,7 @@ void RunCOP() {
 	int pi_NumStops = 0;
 	int pi_Delay = 0;
 
-	for (int index_p = 0; index_p < phases.size(); index_p++) {
+	for (unsigned int index_p = 0; index_p < phases.size(); index_p++) {
 
 	  if (index_p != idxCurrentPh) // phase w/o right-of-way
    {
@@ -256,7 +256,7 @@ void RunCOP() {
        optIndeX = optimal_index_x;
 
       // temporary to permanent queue lengths
-     for (int pp = 0; pp < phases.size(); pp++)
+     for (unsigned int pp = 0; pp < phases.size(); pp++)
       	Q[sj - red][pp][j - 1] = L[sj - red][optIndeX][pp]; // -1 :index
 
       /**print*************************/
@@ -264,7 +264,7 @@ void RunCOP() {
 cout << "\t" << optimal_x;
         cout << "\t" << v[j][sj - red];
 
-        for (int pp = 0; pp < phases.size(); pp++)
+        for (unsigned int pp = 0; pp < phases.size(); pp++)
     cout << "\t" << Q[sj - red][pp][j - 1];
 
         cout << setfill(' ') << setw(30 - 2 * L.size());
@@ -286,7 +286,7 @@ cout << "\t" << optimal_x;
 //if(criterion_flag)
  //{ 
     if (j >= phases.size()) {
-      for (int k = 1; k <= phases.size() - 1; k++) {
+      for (unsigned int k = 1; k <= phases.size() - 1; k++) {
       	criterion_flag = criterion_flag && (v[j - k][T- red] == v[j][T - red]);
       }
 
@@ -327,7 +327,9 @@ idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
 int idxSeq = idxCurrentPh;
 //string controlSeq = "[ ";
  //cout << "[ ";
-  int optimalControlSeq [jsize];
+    //int optimalControlSeq [jsize];
+  int* optimalControlSeq = new int[jsize];
+
 
   for(int jj= jsize; jj>=1; jj--)
   {
@@ -350,6 +352,7 @@ int idxSeq = idxCurrentPh;
 
 cout << endl; 
 printArray(optimalControlSeq, jsize);
+delete optimalControlSeq;
 cout << endl;
 printArrivals();
 
@@ -479,8 +482,8 @@ int getSaturationFlow(int phi) {
 */
 
 void initMatrices(int init) {
-  for (int i = 0; i < v.size(); ++i) {
-    for (int j = 0; j < v[i].size(); ++j) {
+  for (unsigned int i = 0; i < v.size(); ++i) {
+    for (unsigned int j = 0; j < v[i].size(); ++j) {
       if (i == 0) {
        x_star[i][j] = v[i][j] = 0;
 
@@ -511,16 +514,16 @@ cout << "[ ";
 
 void printMatrix(vector<vector<int> > values) {
 
-for (int i = 0; i < values.size(); ++i) {
+for (unsigned int i = 0; i < values.size(); ++i) {
   printVector(values[i]);
   cout << endl;
 }
 }
 
 void printArrivals() {
-cout << endl;
-for (int i = 0; i < 10; ++i) {
-  for (int j = 0; j < 3; ++j) {
+cout << endl; //TODO: dynamic sizes
+for (unsigned int i = 0; i < 10; ++i) {
+  for (unsigned int j = 0; j < 3; ++j) {
       cout << " " << arrivalData[i][j];
   }
   cout << endl;
