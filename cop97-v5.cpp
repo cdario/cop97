@@ -38,11 +38,14 @@ int getB(int a, int b, int phi);
 int getM(int phi, int xj); //simplified
 int getT(int d, int phi); //simplified
 int getSaturationFlow(int phi); //not implemented
+int getArrivalEarliest(int si, int sj, int xj, int phi); //NEW
 
-void initMatrix_v(int init);
+
+void initMatrices(int init);
 void printVector(vector<int> values);
 void printMatrix(vector<vector<int> > values);
 void printArray(int arry[], int sz);
+void printArrivals();
 
 void RunCOP();
 void loadFromFile(char* filename);
@@ -69,13 +72,23 @@ void RunCOP() {
     x_star[i].resize(T);
   }
 
-  initMatrix_v(-1);
+  initMatrices(-1);
   int j = 1;
   bool criterion_flag = 1;
 
   do {
 
+          // <editor-fold defaultstate="collapsed" desc="header stage">
+      cout << endl << "\n\t\t\tStage " << j << " Calculations [" << phaseSeq[idxCurrentPh] << "]" << endl;
+      cout << "--------------------------------------------------------------------" << endl;
+      cout << "s" << j << "\tx*(s" << j << ")\tv(s" << j << ")\tQA\tQB\tQC\tXj(s" << j << ")\n";
+      cout << "--------------------------------------------------------------------\n";
+      // </editor-fold>
+
     for (int sj = red; sj <= T; sj++) {
+
+         cout << " " << sj;
+
 
       X[j] = getFeasibleGreens(sj, j);
       int xSz = X[j].size();
@@ -105,7 +118,6 @@ void RunCOP() {
     int minValueFn = 99999;
     int optimal_x = -1;
     int optimal_index_x = -1;
-      //int earliestArrival = 0;  // not used due to simplification
 
     for (vector<int>::iterator it = X[j].begin(); it != X[j].end(); ++it) {
      int xj = *it;
@@ -114,6 +126,8 @@ void RunCOP() {
 
 	// at stage 0, no steps allocated
 	int si = (j!=1) ? (sj-hj) : 0; // si equals s_{j-1}
+//int si = sj -hj;
+//  cout << "\n hj, si: " <<hj << ", " << si<< "\n";
 
 	int tQueue = 0;
 	int tStops = 0;
@@ -135,10 +149,6 @@ void RunCOP() {
 
      int arrival = arrivalData[sj][index_p];
 
-	      /* //unused due to simplification
-		 if (earliestArrival == 0 && arrival != 0)
-		 earliestArrival = sj;
-	      //*/
 
 	      // temporary queues
    tQueue = getQ(si, index_p, j - 1)
@@ -170,7 +180,15 @@ void RunCOP() {
        tStops = max(0, stopsTerm)
        + getArrivals(si + xj, sj, idxCurrentPh);
 
-	    int tp = si + xj; // equals s_{j} - red
+
+       //NEW
+       /*
+        Calculate tp, function of sj and xj
+       */
+       int tp = getArrivalEarliest(si, sj, xj, idxCurrentPh);
+
+	//    int tp = si + xj; // equals s_{j} - red
+  //    cout <<"(tp: "<< tp<<")";
 
 	    // delay
 	    int delayTerm = min(getQ(si, idxCurrentPh, j - 1),
@@ -199,9 +217,11 @@ void RunCOP() {
 
 	} //end phaseSequence cycle
 
-	// index fix
-	if (j != 1)
+	// index fix TODO: implications
+	if (j != 1 && si >= red){
    si -= red;
+   //cout << "   si = " << si << " \n"; 
+ }
 
  switch (PI) {
    case QUEUES:
@@ -239,21 +259,43 @@ void RunCOP() {
      for (int pp = 0; pp < phases.size(); pp++)
       	Q[sj - red][pp][j - 1] = L[sj - red][optIndeX][pp]; // -1 :index
 
+      /**print*************************/
+
+cout << "\t" << optimal_x;
+        cout << "\t" << v[j][sj - red];
+
+        for (int pp = 0; pp < phases.size(); pp++)
+    cout << "\t" << Q[sj - red][pp][j - 1];
+
+        cout << setfill(' ') << setw(30 - 2 * L.size());
+        printVector(X[j]);
+        cout << endl;
+        // </editor-fold>
+
+        if (sj % 2 == 0)
+    cout << endl;
+
+
+          /**print*************************/
+
+
+
     } //end sj cycle
 
     //************ STOPPING CRITERION ***********
-
+//if(criterion_flag)
+ //{ 
     if (j >= phases.size()) {
       for (int k = 1; k <= phases.size() - 1; k++) {
       	criterion_flag = criterion_flag && (v[j - k][T- red] == v[j][T - red]);
       }
 
       criterion_flag = !criterion_flag;
-
+idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
       if (criterion_flag)
       {
 	  //Updates index of current phase in cycles
-       idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
+       
        j++;
      }
    }
@@ -262,29 +304,54 @@ void RunCOP() {
      idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
      j++;
    }
-
+//}
  } while (criterion_flag);
 
+     cout << "\n**Stopping Criterion satisfied\n **Printing states and optimal control tables";
+    cout << "\n\nTable states( v )\n\n";
+    printMatrix(v);
+    cout << "\nTable optimal control associated (x^star)\n\n";
+    printMatrix(x_star);
+
   /*  Retrieval of Optimal Policy     */
+// cout << endl << "j :"<< j  <<endl;
+
  int jsize = j - (phases.size() - 1);
  int s_star= T;
 
- int idxSeq = initialPhase;
- cout << "[ ";
+ //cout << endl << "jsize :"<< jsize  <<endl;
+ //cout << endl << "s* :"<< s_star  <<endl;
+
+//new
+ //int idxSeq = initialPhase;
+int idxSeq = idxCurrentPh;
+//string controlSeq = "[ ";
+ //cout << "[ ";
+  int optimalControlSeq [jsize];
+
   for(int jj= jsize; jj>=1; jj--)
   {
     int xx = x_star[jj][s_star-red];
-    cout << phaseSeq[idxSeq] << ":" <<xx <<" ";
+
+    //cout <<"\njj, s_star-red = "<< jj <<", "<<s_star-red << " : " << xx;
+    optimalControlSeq[jj-1] = xx;
 
     if (jj > 1) {
      int hj_star = (xx!=0) ? (xx+red) : 0; 
      s_star = s_star - hj_star;
    }
 
-   idxSeq = idxSeq==2 ? 0:idxSeq + 1;
+//TODO: FISHY,  BACKTRACING? SHOULDN'T RUN BACKWARDS
+   //idxSeq = idxSeq==2 ? 0:idxSeq + 1;
+   idxSeq = idxSeq==0 ? 2:idxSeq - 1;
 
  }
- cout << "]\n";
+ //cout << "]\n";
+
+cout << endl; 
+printArray(optimalControlSeq, jsize);
+cout << endl;
+printArrivals();
 
 }; /**************** END MAIN*************/
 
@@ -328,6 +395,37 @@ do {
   return vehicles;
 }
 
+//arrival time of the earliest vehicle required to stop when phi(j);
+int getArrivalEarliest(int si, int sj, int xj, int phi)
+{
+  int timeArrival = 999;
+  /*    //NEW
+  for (int p=0; p< phases.size(); p++)
+  {
+    if (p != phi)
+    {
+      for (int i = sj; i >= 0; i--)
+      { 
+         if(arrivalData[i][p]!=0)
+          {
+            //if (timeArrival >= i)
+              timeArrival = i;
+          }
+          else
+          {
+            break;
+          }
+      }
+    } 
+  }
+
+  if (timeArrival == 999)  // */
+  // no stops, similar for A  calculations
+  timeArrival = si + xj;
+
+  return timeArrival;
+}
+
 int getB(int a, int b, int phi) {
 
   int dB = 0;
@@ -338,6 +436,7 @@ int getB(int a, int b, int phi) {
       dB += b - k;
     k++;
   } while (k < b); //a <= ak < b
+
 
   return dB;
 }
@@ -379,13 +478,14 @@ int getSaturationFlow(int phi) {
 ************** OTHER FUNCTIONS
 */
 
-void initMatrix_v(int init) {
+void initMatrices(int init) {
   for (int i = 0; i < v.size(); ++i) {
     for (int j = 0; j < v[i].size(); ++j) {
       if (i == 0) {
-       v[i][j] = 0;
+       x_star[i][j] = v[i][j] = 0;
+
      } else {
-       v[i][j] = init;
+       x_star[i][j] = v[i][j] = init;
      }
    }
  }
@@ -394,8 +494,8 @@ void initMatrix_v(int init) {
 void printArray(int arry[], int sz) {
 
 cout << "[ ";
-  for (int i = sz - 1; i >= 0; i--) {
-    cout << arry[i] << " ";
+  for (int i = 0; i < sz; i++) {
+    cout << phaseSeq[(i+initialPhase)%phases.size()]<<":"<< arry[i] << " ";
   }
   cout << "]";
 }
@@ -417,6 +517,18 @@ for (int i = 0; i < values.size(); ++i) {
 }
 }
 
+void printArrivals() {
+cout << endl;
+for (int i = 0; i < 10; ++i) {
+  for (int j = 0; j < 3; ++j) {
+      cout << " " << arrivalData[i][j];
+  }
+  cout << endl;
+}
+cout << endl;
+}
+
+
 void loadFromFile(char* filename) {
 int x, y;
 ifstream in(filename);
@@ -429,7 +541,7 @@ if (!in) {
 for (y = 0; y < 10; y++) {
   for (x = 0; x < 3; x++) {
 
-   in >> arrivalData[y-1][x];
+   in >> arrivalData[y][x];
  }
 }
 in.close();

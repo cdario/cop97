@@ -12,7 +12,6 @@
   #include <algorithm>
   #include <iostream>
   #include <iomanip>
-  #include <fstream>
 
   using namespace std;
 
@@ -29,13 +28,12 @@
   vector<int> phases(phaseSeq, phaseSeq + sizeof (phaseSeq) /
   		   sizeof (phaseSeq[0])); // A = 0, B = 1, C = 2
 
-  int initialPhase; // = 2;
-  int idxCurrentPh; //= initialPhase; // set initial phase to C (2)
+  const int initialPhase = 2;
+  int idxCurrentPh = initialPhase; // set initial phase to C (2)
   int permanentQueueLengths[T] = {};
-  int arrivalData[10][3];
-/*
-   = {
-    { 0, 0, 1},
+  int arrivalData[10][3] = 
+  {
+    { 0, 0, 1},     
     { 0, 0, 1},
     { 0, 0, 0},
     { 0, 1, 0},
@@ -46,7 +44,51 @@
     { 0, 1, 0},
     { 0, 0, 0}
   };
+
+/*
+{
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 1, 1, 0},
+    { 1, 1, 0},
+    { 1, 1, 0},
+    { 1, 1, 0},
+    { 1, 0, 0},
+    { 0, 1, 0},
+    { 0, 1, 0}
+  };
 */
+  
+/*  {
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 1, 0, 0},
+    { 1, 0, 0},
+    { 1, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0}
+  };
+  */
+
+  /*
+{
+    { 0, 0, 1},     //paper
+    { 0, 0, 1},
+    { 0, 0, 0},
+    { 0, 1, 0},
+    { 0, 1, 0},
+    { 1, 1, 0},
+    { 1, 0, 0},
+    { 1, 1, 0},
+    { 0, 1, 0},
+    { 0, 0, 0}
+  };
+  */
+
   std::vector< std::vector<int> > v; //v_j(s_j);
   std::vector< std::vector<int> > x_star; // optimal solutions x*_j(s_j)
   vector<vector<vector<int> > > Q; // permanent queue lengths Q_{phi, j}(s_j)
@@ -61,8 +103,6 @@
   int getT(int d, int phi); //simplified
   int getSaturationFlow(int phi); //not implemented
 
-  bool verbose;
-
   void initMatrix_v(int init);
   //void updateIndexPhase2Stage();
   void printVector(vector<int> values);
@@ -70,15 +110,8 @@
   void printArray(int arry[], int sz);
 
   void RunCOP();
-  void loadFromFile(char* filename);
 
   int main(int argc, char** argv) {
-
-    loadFromFile(argv[1]);
-    initialPhase  = *argv[2]- 48;
-    idxCurrentPh = initialPhase;
-    if ((*argv[3] - 48) == 1) verbose = true; else verbose = false;
-
     RunCOP();
     return 0;
   }
@@ -96,29 +129,23 @@
     }
 
     initMatrix_v(-1);
-    if (verbose)
-    {
-      cout << "\n**cop97 started \n ... Matrix v initialised\n";
-      cout << "\n**Computing DP stages";
-    }
+    cout << "\n**cop97 started \n ... Matrix v initialised\n";
+    cout << "\n**Computing DP stages";
 
     int j = 1;
-    bool goOn = 1;
+    bool criterion_flag = 1;
 
     do {
 
- 
       // <editor-fold defaultstate="collapsed" desc="header stage">
-      if (verbose){
       cout << endl << "\n\n\t\t\tStage " << j << " Calculations [" << phaseSeq[idxCurrentPh] << "]" << endl;
       cout << "--------------------------------------------------------------------" << endl;
       cout << "s" << j << "\tx*(s" << j << ")\tv(s" << j << ")\tQA\tQB\tQC\tXj(s" << j << ")\n";
       cout << "--------------------------------------------------------------------\n";
-      }
       // </editor-fold>
 
       for (int sj = red; sj <= T; sj++) {
-        if (verbose)
+
         cout << " " << sj;
 
         X[j] = getFeasibleGreens(sj, j);
@@ -225,7 +252,7 @@
 
   	    /*
   	     * t_{phi}:
-  	     * This function of s_j and x_j is only defined for phi = phi(j)
+  	     * This function of s_j and x_j is only definecriterion_flagd for phi = phi(j)
   	     *
   	     * Denotes the arrival time of the earliest vehicle that is required to stop
   	     * while phase phi(j) has the right of way.
@@ -274,7 +301,7 @@
   	} //end phaseSequence cycle
 
   	// index fix
-  	if (j != 1)
+  	if (j != 1 && si >=red )
   	  si -= red;
 
   	switch (PI) {
@@ -324,13 +351,11 @@
   	Q[sj - red][pp][j - 1] = L[sj - red][optIndeX][pp]; // -1 :index
 
         //<editor-fold defaultstate="collapsed" desc="body stage">
-      if (verbose)
-      {
         cout << "\t" << optimal_x;
         cout << "\t" << v[j][sj - red];
 
         for (int pp = 0; pp < phases.size(); pp++)
-  	     cout << "\t" << Q[sj - red][pp][j - 1];
+  	cout << "\t" << Q[sj - red][pp][j - 1];
 
         cout << setfill(' ') << setw(30 - 2 * L.size());
         printVector(X[j]);
@@ -338,22 +363,20 @@
         // </editor-fold>
 
         if (sj % 2 == 0)
-  	     cout << endl;
-      }
-
+  	cout << endl;
       } //end sj cycle
 
 
       //stopping criterion
 
       if (j >= phases.size()) {
-        for (int k = 1; k <= phases.size() - 1; k++) {
-  	goOn = goOn && (v[j - k][T- red] == v[j][T - red]);
+          for (int k = 1; k <= phases.size() - 1; k++) {
+  	         criterion_flag = criterion_flag && (v[j - k][T- red] == v[j][T - red]);
         }
 
-        goOn = !goOn;
+        criterion_flag = !criterion_flag;
 
-        if (goOn)
+        if (criterion_flag)
   	{
   	  //Updates index of current phase in cycles
   	  idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
@@ -366,16 +389,16 @@
   	j++;
         }
 
-    } while (goOn);
 
-    if (verbose)
-    {
-      cout << "\n**Stopping Criterion satisfied\n **Printing states and optimal control tables";
-      cout << "\n\nTable states( v )\n\n";
-      printMatrix(v);
-      cout << "\nTable optimal control associated (x^star)\n\n";
-      printMatrix(x_star);
-    }
+
+    } while (criterion_flag);
+
+    cout << "\n**Stopping Criterion satisfied\n **Printing states and optimal control tables";
+    cout << "\n\nTable states( v )\n\n";
+    printMatrix(v);
+    cout << "\nTable optimal control associated (x^star)\n\n";
+    printMatrix(x_star);
+
 
 
     /*  Retrieval of Optimal Policy     */
@@ -383,28 +406,27 @@
     int jsize = j - (phases.size() - 1);
     //std::vector<int> s;
     int s_star= T;
-    if (verbose){
-      cout <<  "\n**Recovering optimal solution";
-      cout <<  "\n\nMin control delay sequence ";
-    }
+    cout <<  "\n**Recovering optimal solution";
+    cout <<  "\n\nMin control delay sequence ";
+
 
     int idxSeq = initialPhase;
-    cout << "[ ";
+
     for(int jj= jsize; jj>=1; jj--)
-    {
+      {
         int xx = x_star[jj][s_star-red];
         cout << phaseSeq[idxSeq] << ":" <<xx <<" ";
 
-      if (jj > 1) {
-  	    int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
-  	     s_star = s_star - hj_star;
-  	  }
+        if (jj > 1)
+  	{
+  	  int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
+  	  s_star = s_star - hj_star;
+  	}
 
-      idxSeq = idxSeq==2 ? 0:idxSeq + 1;
+        idxSeq = idxSeq==2 ? 0:idxSeq + 1;
 
-    }
-      cout << "]";
-    if (verbose)
+      }
+
     cout  << "\n **cop97 ended \n";
 
   };
@@ -614,20 +636,3 @@
     }
   }
 
-void loadFromFile(char* filename) {
-        int x, y;
-        ifstream in(filename);
-
-        if (!in) {
-          cout << "Cannot open file.\n";
-          return;
-        }
-
-        for (y = 0; y < 10; y++) {
-          for (x = 0; x < 3; x++) {
-
-               in >> arrivalData[y-1][x];
-          }
-        }
-        in.close();
-      }

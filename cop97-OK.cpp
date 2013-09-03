@@ -12,8 +12,7 @@
   #include <algorithm>
   #include <iostream>
   #include <iomanip>
-  #include <fstream>
-  
+
   using namespace std;
 
   enum PIEnum {
@@ -24,24 +23,60 @@
   const int red = 1;
   const int mingreen = 2;
   const int T = 10; //planning horizon or no. of discrete time steps
-  const int M = 8; //predetermined number of phases to compute -
+  const int M = 8; //predetermined number of phases to compute - 8?
   static const char phaseSeq[] = {'A', 'B', 'C'};
   vector<int> phases(phaseSeq, phaseSeq + sizeof (phaseSeq) /
   		   sizeof (phaseSeq[0])); // A = 0, B = 1, C = 2
 
-  //NEW
-  int coordinatedPhase ; //A
-  int offset;
-
-  int timesteps = 0;
-
-  int bandwidth = 3; // arbitrary
-
-  int initialPhase; // set to coordinated phase
-  int idxCurrentPh; // set initial phase to C (2)
+  const int initialPhase = 2;
+  int idxCurrentPh = initialPhase; // set initial phase to C (2)
   int permanentQueueLengths[T] = {};
-/*  int arrivalData[10][3] = {
+  int arrivalData[10][3] = 
+  /*{
+    { 0, 0, 0},     
+    { 0, 0, 0},
+    { 1, 0, 0},
+    { 1, 0, 0},
+    { 1, 0, 0},
+    { 0, 1, 0},
+    { 0, 1, 0},
     { 0, 0, 1},
+    { 0, 0, 1},
+    { 0, 0, 0}
+  };*/
+
+/*
+{
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 1, 1, 0},
+    { 1, 1, 0},
+    { 1, 1, 0},
+    { 1, 1, 0},
+    { 1, 0, 0},
+    { 0, 1, 0},
+    { 0, 1, 0}
+  };
+*/
+ /* 
+  {
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 1, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 0, 0, 0},
+    { 0, 1, 0},
+    { 0, 1, 0},
+    { 0, 1, 0},
+    { 0, 0, 0}
+  };
+  */
+
+  
+{
+    { 0, 0, 1},     //paper
     { 0, 0, 1},
     { 0, 0, 0},
     { 0, 1, 0},
@@ -52,10 +87,7 @@
     { 0, 1, 0},
     { 0, 0, 0}
   };
-*/
-
-int arrivalData[10][3];  
-
+  
 
   std::vector< std::vector<int> > v; //v_j(s_j);
   std::vector< std::vector<int> > x_star; // optimal solutions x*_j(s_j)
@@ -77,29 +109,9 @@ int arrivalData[10][3];
   void printMatrix(vector<vector<int> > values);
   void printArray(int arry[], int sz);
 
-  void loadFromFile();
-
   void RunCOP();
 
   int main(int argc, char** argv) {
-
-  loadFromFile();
-  initialPhase = coordinatedPhase; //NEW for simplicity, COP starts at the end of the coordinated phase
-  idxCurrentPh = initialPhase;
-  cout << "coordinated = " << coordinatedPhase<< endl;
-//cout << "coordinated phase = " << coordinatedPhase<< endl;
-//cout << "offset = " << offset<< endl;
-
-/*
-for (int y = 0; y < 3; y++) {
-    for (int x = 0; x < 10; x++) {
-      cout << arrivalData[x][y];
-    }
-    cout << endl;
-}
-*/
-
-
     RunCOP();
     return 0;
   }
@@ -107,7 +119,6 @@ for (int y = 0; y < 3; y++) {
   void RunCOP() {
 
     std::vector<int> X[T] = {};
-
 
     v.resize(M);
     x_star.resize(M);
@@ -122,23 +133,22 @@ for (int y = 0; y < 3; y++) {
     cout << "\n**Computing DP stages";
 
     int j = 1;
-    bool goOn = 1;
+    bool criterion_flag = 1;
 
     do {
-cout << "mark1";
+
       // <editor-fold defaultstate="collapsed" desc="header stage">
       cout << endl << "\n\n\t\t\tStage " << j << " Calculations [" << phaseSeq[idxCurrentPh] << "]" << endl;
       cout << "--------------------------------------------------------------------" << endl;
       cout << "s" << j << "\tx*(s" << j << ")\tv(s" << j << ")\tQA\tQB\tQC\tXj(s" << j << ")\n";
       cout << "--------------------------------------------------------------------\n";
       // </editor-fold>
-cout << "mark2";
+
       for (int sj = red; sj <= T; sj++) {
 
-
         cout << " " << sj;
+
         X[j] = getFeasibleGreens(sj, j);
-        
         int xSz = X[j].size();
 
         // <editor-fold defaultstate="collapsed" desc="header value function calculations">
@@ -161,7 +171,6 @@ cout << "mark2";
         	}
         }
 
-
         //dimensions Q : [ sj ] [ phi ] [ j ]
         Q.resize(T);
         for (int i = 0; i < T; ++i) {
@@ -177,8 +186,6 @@ cout << "mark2";
         int optimal_x = -1;
         int optimal_index_x = -1;
         //int earliestArrival = 0;  // not used due to simplification
-
-
 
         for (vector<int>::iterator it = X[j].begin(); it != X[j].end(); ++it) {
   	int xj = *it;
@@ -245,7 +252,7 @@ cout << "mark2";
 
   	    /*
   	     * t_{phi}:
-  	     * This function of s_j and x_j is only defined for phi = phi(j)
+  	     * This function of s_j and x_j is only definecriterion_flagd for phi = phi(j)
   	     *
   	     * Denotes the arrival time of the earliest vehicle that is required to stop
   	     * while phase phi(j) has the right of way.
@@ -294,7 +301,7 @@ cout << "mark2";
   	} //end phaseSequence cycle
 
   	// index fix
-  	if (j != 1)
+  	if (j != 1  si >=red )
   	  si -= red;
 
   	switch (PI) {
@@ -362,27 +369,59 @@ cout << "mark2";
 
       //stopping criterion
 
+      // if(j < phases.size())
+      // {
+      //   j++;
+      //   if(idxCurrentPh==2) idxCurrentPh = 0;
+      //   else idxCurrentPh ++;
+      // }
+      // else
+      // {
+      //   for (int k = 1; k <= phases.size() - 1; k++){  //TK: k might start in 0, this 0, 1, 2!!!
+      //     criterion_flag = criterion_flag && (v[j - k][T- red] == v[j][T - red]); //valid but better test
+      //   }
+
+      //   if(!criterion_flag)
+      //   {
+      //     j++;
+      //     if(idxCurrentPh==2) idxCurrentPh = 0;
+      //     else idxCurrentPh ++;
+      //   }
+      // }
+
+
+
       if (j >= phases.size()) {
-        for (int k = 1; k <= phases.size() - 1; k++) {
-  	goOn = goOn && (v[j - k][T- red] == v[j][T - red]);
+          for (int k = 1; k <= phases.size() - 1; k++) {
+
+  	         criterion_flag = criterion_flag && (v[j - k][T- red] == v[j][T - red]);
+                         cout <<"("<<j - k <<", "<< j <<") -> "<< criterion_flag <<" : " << v[j - k][T- red] << " ?= " << v[j][T - red] << endl;
         }
-
-        goOn = !goOn;
-
-        if (goOn)
-  	{
-  	  //Updates index of current phase in cycles
-  	  idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
-  	  j++;
-  	}
+        criterion_flag = !criterion_flag;
+         if (criterion_flag)
+  	   {
+  	     //Updates index of current phase in cycles
+  	     idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
+  	     j++;
+  	   }
       }
       else
-        {
-  	idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
-  	j++;
-        }
+      {
+       	idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
+       	j++;
+      }
 
-    } while (goOn);
+       // criterion_flag = j < M-2;  
+
+       // if (criterion_flag)
+       // {
+       //   idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
+       //   j++;
+       // }
+
+
+
+    } while (criterion_flag);
 
     cout << "\n**Stopping Criterion satisfied\n **Printing states and optimal control tables";
     cout << "\n\nTable states( v )\n\n";
@@ -393,7 +432,7 @@ cout << "mark2";
 
 
     /*  Retrieval of Optimal Policy     */
-
+    cout << "j : "<< j;
     int jsize = j - (phases.size() - 1);
     //std::vector<int> s;
     int s_star= T;
@@ -402,17 +441,21 @@ cout << "mark2";
 
 
     int idxSeq = initialPhase;
-
+    //cout <<  "\ninitial phase " << idxSeq;
     for(int jj= jsize; jj>=1; jj--)
       {
         int xx = x_star[jj][s_star-red];
-        cout << phaseSeq[idxSeq] << ":" <<xx <<" ";
+        //cout <<  "\nx* = "<< xx;
+        cout <<""<< phaseSeq[idxSeq] << ":" <<xx <<" ";
 
         if (jj > 1)
-  	{
-  	  int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
-  	  s_star = s_star - hj_star;
-  	}
+  	     {
+  	       int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
+           //cout <<  "\nhj* = " << hj_star;
+  	       //cout <<  "\ns* = " << s_star;
+           s_star = s_star - hj_star;
+           //cout <<  "\ns* = " << s_star;
+  	     }
 
         idxSeq = idxSeq==2 ? 0:idxSeq + 1;
 
@@ -440,25 +483,15 @@ cout << "mark2";
     if (j == 1) //simplification removes the min green restriction for stage 1
       set.push_back(sj - red);
     else {
+      set.push_back(0);
+      int c = mingreen;
 
-    if( idxCurrentPh == coordinatedPhase) //NEW no phase skipping, only option is bandwidth
-    {
-      set.push_back(bandwidth);
-    }
-    else
-    {  
-        set.push_back(0);
-        int c = mingreen;
-
-        if (!(sj - red < mingreen)) {
-          do {
-    	set.push_back(c);
-    	c++;
-          } while (c < (sj - red));
-        }
-    }
-
-
+      if (!(sj - red < mingreen)) {
+        do {
+  	set.push_back(c);
+  	c++;
+        } while (c < (sj - red));
+      }
     }
 
     return set;
@@ -620,9 +653,6 @@ cout << "mark2";
     cout << "]";
   }
 
-
-
-
   void printVector(vector<int> values) {
 
     cout << "[ ";
@@ -639,41 +669,4 @@ cout << "mark2";
       cout << endl;
     }
   }
-
-  //NEW 
-
-  void loadFromFile() {
-  int x, y;
-  ifstream in("data1.txt");
-
-  if (!in) {
-    cout << "Cannot open file.\n";
-    return;
-  }
-
-  int phaseCheck;
-
-  for (y = 0; y <= 10; y++) {
-    for (x = 0; x < 3; x++) {
-
-//      in >> phaseCheck;
-
-//      cout << phaseCheck << ", ";
-
-       if (y == 0)
-       {
-         in >>  phaseCheck;
-         if (phaseCheck > 0){ //allow for one coordinated phase
-         coordinatedPhase = x;
-          offset  = phaseCheck;
-         } 
-       }else
-       {
-         in >> arrivalData[y-1][x];
-       }
-    }
-  }
-
-  in.close();
-}
 
