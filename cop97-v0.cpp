@@ -23,11 +23,7 @@
   const int red = 1;
   const int mingreen = 2;
   const int T = 10; //planning horizon or no. of discrete time steps
-<<<<<<< HEAD
   const int M = 8; //predetermined number of phases to compute -
-=======
-  const int M = 8; //predetermined number of phases to compute - 8?
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
   static const char phaseSeq[] = {'A', 'B', 'C'};
   vector<int> phases(phaseSeq, phaseSeq + sizeof (phaseSeq) /
   		   sizeof (phaseSeq[0])); // A = 0, B = 1, C = 2
@@ -35,57 +31,8 @@
   const int initialPhase = 2;
   int idxCurrentPh = initialPhase; // set initial phase to C (2)
   int permanentQueueLengths[T] = {};
-<<<<<<< HEAD
   int arrivalData[10][3] = {
     { 0, 0, 1},
-=======
-  int arrivalData[10][3] = 
-  /*{
-    { 0, 0, 0},     
-    { 0, 0, 0},
-    { 1, 0, 0},
-    { 1, 0, 0},
-    { 1, 0, 0},
-    { 0, 1, 0},
-    { 0, 1, 0},
-    { 0, 0, 1},
-    { 0, 0, 1},
-    { 0, 0, 0}
-  };*/
-
-/*
-{
-    { 0, 0, 0},
-    { 0, 0, 0},
-    { 0, 0, 0},
-    { 1, 1, 0},
-    { 1, 1, 0},
-    { 1, 1, 0},
-    { 1, 1, 0},
-    { 1, 0, 0},
-    { 0, 1, 0},
-    { 0, 1, 0}
-  };
-*/
- /* 
-  {
-    { 0, 0, 0},
-    { 0, 0, 0},
-    { 1, 0, 0},
-    { 0, 0, 0},
-    { 0, 0, 0},
-    { 0, 0, 0},
-    { 0, 1, 0},
-    { 0, 1, 0},
-    { 0, 1, 0},
-    { 0, 0, 0}
-  };
-  */
-
-  
-{
-    { 0, 0, 1},     //paper
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
     { 0, 0, 1},
     { 0, 0, 0},
     { 0, 1, 0},
@@ -96,10 +43,6 @@
     { 0, 1, 0},
     { 0, 0, 0}
   };
-<<<<<<< HEAD
-=======
-  
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
 
   std::vector< std::vector<int> > v; //v_j(s_j);
   std::vector< std::vector<int> > x_star; // optimal solutions x*_j(s_j)
@@ -145,11 +88,7 @@
     cout << "\n**Computing DP stages";
 
     int j = 1;
-<<<<<<< HEAD
     bool goOn = 1;
-=======
-    bool criterion_flag = 1;
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
 
     do {
 
@@ -268,11 +207,7 @@
 
   	    /*
   	     * t_{phi}:
-<<<<<<< HEAD
   	     * This function of s_j and x_j is only defined for phi = phi(j)
-=======
-  	     * This function of s_j and x_j is only definecriterion_flagd for phi = phi(j)
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
   	     *
   	     * Denotes the arrival time of the earliest vehicle that is required to stop
   	     * while phase phi(j) has the right of way.
@@ -321,11 +256,7 @@
   	} //end phaseSequence cycle
 
   	// index fix
-<<<<<<< HEAD
   	if (j != 1)
-=======
-  	if (j != 1  si >=red )
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
   	  si -= red;
 
   	switch (PI) {
@@ -393,7 +324,6 @@
 
       //stopping criterion
 
-<<<<<<< HEAD
       if (j >= phases.size()) {
         for (int k = 1; k <= phases.size() - 1; k++) {
   	goOn = goOn && (v[j - k][T- red] == v[j][T - red]);
@@ -415,61 +345,6 @@
         }
 
     } while (goOn);
-=======
-      // if(j < phases.size())
-      // {
-      //   j++;
-      //   if(idxCurrentPh==2) idxCurrentPh = 0;
-      //   else idxCurrentPh ++;
-      // }
-      // else
-      // {
-      //   for (int k = 1; k <= phases.size() - 1; k++){  //TK: k might start in 0, this 0, 1, 2!!!
-      //     criterion_flag = criterion_flag && (v[j - k][T- red] == v[j][T - red]); //valid but better test
-      //   }
-
-      //   if(!criterion_flag)
-      //   {
-      //     j++;
-      //     if(idxCurrentPh==2) idxCurrentPh = 0;
-      //     else idxCurrentPh ++;
-      //   }
-      // }
-
-
-
-      if (j >= phases.size()) {
-          for (int k = 1; k <= phases.size() - 1; k++) {
-
-  	         criterion_flag = criterion_flag && (v[j - k][T- red] == v[j][T - red]);
-                         cout <<"("<<j - k <<", "<< j <<") -> "<< criterion_flag <<" : " << v[j - k][T- red] << " ?= " << v[j][T - red] << endl;
-        }
-        criterion_flag = !criterion_flag;
-         if (criterion_flag)
-  	   {
-  	     //Updates index of current phase in cycles
-  	     idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
-  	     j++;
-  	   }
-      }
-      else
-      {
-       	idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
-       	j++;
-      }
-
-       // criterion_flag = j < M-2;  
-
-       // if (criterion_flag)
-       // {
-       //   idxCurrentPh = idxCurrentPh==2 ? 0:idxCurrentPh + 1;
-       //   j++;
-       // }
-
-
-
-    } while (criterion_flag);
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
 
     cout << "\n**Stopping Criterion satisfied\n **Printing states and optimal control tables";
     cout << "\n\nTable states( v )\n\n";
@@ -480,11 +355,7 @@
 
 
     /*  Retrieval of Optimal Policy     */
-<<<<<<< HEAD
 
-=======
-    cout << "j : "<< j;
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
     int jsize = j - (phases.size() - 1);
     //std::vector<int> s;
     int s_star= T;
@@ -493,7 +364,6 @@
 
 
     int idxSeq = initialPhase;
-<<<<<<< HEAD
 
     for(int jj= jsize; jj>=1; jj--)
       {
@@ -505,23 +375,6 @@
   	  int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
   	  s_star = s_star - hj_star;
   	}
-=======
-    //cout <<  "\ninitial phase " << idxSeq;
-    for(int jj= jsize; jj>=1; jj--)
-      {
-        int xx = x_star[jj][s_star-red];
-        //cout <<  "\nx* = "<< xx;
-        cout <<""<< phaseSeq[idxSeq] << ":" <<xx <<" ";
-
-        if (jj > 1)
-  	     {
-  	       int hj_star = (xx!=0) ? (xx+red) : 0; //transition value
-           //cout <<  "\nhj* = " << hj_star;
-  	       //cout <<  "\ns* = " << s_star;
-           s_star = s_star - hj_star;
-           //cout <<  "\ns* = " << s_star;
-  	     }
->>>>>>> 6baff9f4640fcbdd9591cd6ced5282172b60fe2b
 
         idxSeq = idxSeq==2 ? 0:idxSeq + 1;
 
